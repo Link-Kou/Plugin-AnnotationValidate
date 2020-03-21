@@ -1,4 +1,4 @@
-package com.plugin.annotationvalidate.hibernatevalidator.constraint;
+package com.plugin.annotationvalidate.hibernatevalidator;
 
 import javax.validation.Constraint;
 import javax.validation.Payload;

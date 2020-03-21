@@ -4,19 +4,46 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.plugin</groupId>
-    <artifactId>AnnotationValidate</artifactId>
-    <version>1.0.4</version>
+    <groupId>com.github.link-kou</groupId>
+    <artifactId>annotation-validate</artifactId>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>Plugin-AnnotationValidate-${parent.version}</name>
-    <url>http://maven.apache.org</url>
+    <url>https://github.com/Link-Kou/Plugin-AnnotationValidate</url>
+    <description>AnnotationValidatePlugin</description>
 
-    <description>springjar</description>
-    <inceptionYear>2017</inceptionYear>
+    <licenses>
+        <license>
+            <name>MIT License</name>
+            <url>https://opensource.org/licenses/MIT</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <email>chinacclk@gmail.com</email>
+            <name>Link-Kou</name>
+            <url>https://github.com/Link-Kou/AnnotationValidate</url>
+            <id>Link-Kou</id>
+        </developer>
+    </developers>
+
+    <issueManagement>
+        <url>https://github.com/Link-Kou/AnnotationValidate/issues</url>
+        <system>GitHub Issues</system>
+    </issueManagement>
+
+    <scm>
+        <url>https://github.com/Link-Kou/AnnotationValidate</url>
+        <connection>scm:git:https://git@github.com/Link-Kou/AnnotationValidate.git</connection>
+    </scm>
+
+    <inceptionYear>2019</inceptionYear>
 
     <organization>
-        <name>springjar</name>
-        <url>https://www.plugin.com</url>
+        <name>Link-Kou</name>
+        <url>https://github.com/Link-Kou/AnnotationValidate</url>
     </organization>
 
     <properties>
@@ -30,45 +57,35 @@
 
     <repositories>
         <repository>
-            <id>in-project</id>
-            <name>In Project Repo</name>
-            <url>file://${project.basedir}/lib</url>
-        </repository>
-        <repository>
-            <id>public maven</id>
-            <name>public maven</name>
-            <url>${repository-publicip}/nexus/repository/maven-public</url>
-        </repository>
-        <repository>
             <id>alimaven</id>
             <name>aliyun maven</name>
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </repository>
-    </repositories>
-
-
-   <!-- <distributionManagement>
         <repository>
-            <id>releases</id>
-            <name>Nexus Release Repository</name>
-            <url>${repository-ip}/repository/maven-releases/</url>
+            <id>in-project</id>
+            <name>In Project Repo</name>
+            <url>file://${project.basedir}/lib</url>
         </repository>
-        <snapshotRepository>
-            <id>snapshots</id>
-            <name>Nexus Snapshot Repository</name>
-            <url>${repository-ip}/repository/maven-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>-->
+        <!--<repository>
+            <id>public maven</id>
+            <name>public maven</name>
+            <url>${repository-publicip}/nexus/repository/maven-public</url>
+        </repository>-->
+    </repositories>
 
 
     <distributionManagement>
         <repository>
-            <id>nexus-releases</id>
-            <name>richerway_deploy</name>
-            <url>http://192.168.5.102:18002/nexus/repository/maven-releases/</url>
+            <id>oss-sonatype</id>
+            <name>Nexus Release Repository</name>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
         </repository>
+        <snapshotRepository>
+            <id>oss-sonatype</id>
+            <name>Sonatype Nexus Snapshots</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </snapshotRepository>
     </distributionManagement>
-
 
     <dependencies>
 
@@ -117,36 +134,38 @@
             </exclusions>
         </dependency>
 
+        <!--代码树接管-->
+        <!-- https://mvnrepository.com/artifact/com.sun/tools -->
         <dependency>
             <groupId>com.sun</groupId>
             <artifactId>tools</artifactId>
-            <version>1.6.0</version>
+            <version>1.8</version>
             <scope>system</scope>
-            <systemPath>${JAVA_HOME}/lib/tools.jar</systemPath>
+            <systemPath>/Library/Java/JavaVirtualMachines/jdk1.8.0_172.jdk/Contents/Home/lib/tools.jar</systemPath>
             <optional>true</optional>
         </dependency>
 
     </dependencies>
 
     <build>
-
         <finalName>${project.name}</finalName>
-
         <plugins>
-
+            <!--说明项目架包版本-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <version>3.8.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
+                    <encoding>utf-8</encoding>
                     <!-- Disable annotation processing for ourselves. -->
                     <compilerArgument>-proc:none</compilerArgument>
                 </configuration>
             </plugin>
             <!-- 生成sources源码包的插件 -->
-            <!--<plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>3.0.1</version>
                 <configuration>
@@ -160,11 +179,39 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>-->
+            </plugin>
+            <!--javadoc-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <show>private</show>
+                    <nohelp>true</nohelp>
+                    <charset>UTF-8</charset>
+                    <encoding>UTF-8</encoding>
+                    <docencoding>UTF-8</docencoding>
+                    <javadocExecutable>/Library/Java/JavaVirtualMachines/jdk1.8.0_172.jdk/Contents/Home/bin/javadoc
+                    </javadocExecutable>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <additionalJOption>-Xdoclint:none</additionalJOption>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <!-- 打包JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
+                <version>3.2.0</version>
                 <configuration>
                     <archive>
                         <addMavenDescriptor>true</addMavenDescriptor>
@@ -176,6 +223,21 @@
                     </archive>
                 </configuration>
             </plugin>
+            <!--IDEA 上传打开 签名-->
+            <!--<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>1.5</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>-->
         </plugins>
 
         <!--解决XML资源文件在代码目录下编译的时候不拷贝问题-->
@@ -190,6 +252,92 @@
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
+
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <version>3.0.0-M1</version>
+                        <configuration>
+                            <deployAtEnd>true</deployAtEnd>
+                        </configuration>
+                    </plugin>
+                    <!-- Source -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <executions>
+                            <execution>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- Javadoc -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <configuration>
+                            <show>private</show>
+                            <nohelp>true</nohelp>
+                            <charset>UTF-8</charset>
+                            <encoding>UTF-8</encoding>
+                            <docencoding>UTF-8</docencoding>
+                            <javadocExecutable>
+                                /Library/Java/JavaVirtualMachines/jdk1.8.0_172.jdk/Contents/Home/bin/javadoc
+                            </javadocExecutable>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                                <configuration>
+                                    <additionalJOption>-Xdoclint:none</additionalJOption>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <!-- GPG -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <distributionManagement>
+                <repository>
+                    <id>oss-sonatype</id>
+                    <name>Nexus Release Repository</name>
+                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+                </repository>
+                <snapshotRepository>
+                    <id>oss-sonatype</id>
+                    <name>Sonatype Nexus Snapshots</name>
+                    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+    </profiles>
 
 </project>

@@ -1,10 +1,6 @@
 package com.spring;
 
-import com.plugin.annotationvalidate.hibernatevalidator.constraint.DateTimeRanges;
-import com.plugin.annotationvalidate.hibernatevalidator.enums.Range;
-
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
@@ -21,7 +17,6 @@ public class Car {
 
     private int seatCount;
 
-    @DateTimeRanges(range = Range.BEFORE)
     private Date date = new Date();
 
     public Car() throws ParseException {

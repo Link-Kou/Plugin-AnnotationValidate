@@ -1,4 +1,4 @@
-package com.plugin.annotationvalidate.hibernatevalidator.constraint;
+package com.plugin.annotationvalidate.hibernatevalidator;
 
 import com.baidu.unbiz.fluentvalidator.Validator;
 import com.baidu.unbiz.fluentvalidator.ValidatorContext;
