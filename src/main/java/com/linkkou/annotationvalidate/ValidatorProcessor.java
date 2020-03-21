@@ -1,4 +1,4 @@
-package com.plugin.annotationvalidate;
+package com.linkkou.annotationvalidate;
 
 
 import com.sun.source.util.Trees;

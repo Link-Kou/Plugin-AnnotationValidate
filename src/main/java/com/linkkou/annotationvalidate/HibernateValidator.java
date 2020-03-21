@@ -1,4 +1,4 @@
-package com.plugin.annotationvalidate;
+package com.linkkou.annotationvalidate;
 
 import com.baidu.unbiz.fluentvalidator.jsr303.HibernateSupportedValidator;
 
