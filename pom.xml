@@ -6,9 +6,10 @@
 
     <groupId>com.github.link-kou</groupId>
     <artifactId>annotation-validate</artifactId>
-    <version>1.0.0</version>
+
     <packaging>jar</packaging>
-    <name>Plugin-AnnotationValidate-${parent.version}</name>
+    <version>1.0.0</version>
+    <name>Plugin-AnnotationValidate-${project.version}</name>
     <url>https://github.com/Link-Kou/Plugin-AnnotationValidate</url>
     <description>AnnotationValidatePlugin</description>
 
@@ -50,9 +51,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java-version>1.8</java-version>
         <org.springframework-version>4.3.7.RELEASE</org.springframework-version>
-        <org.aspectj-version>1.8.10</org.aspectj-version>
-        <org.slf4j-version>1.7.24</org.slf4j-version>
-        <repository-publicip>http://192.168.5.102:18002</repository-publicip>
     </properties>
 
     <repositories>
@@ -89,18 +87,12 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.12</version>
-            <scope>test</scope>
-        </dependency>
-
         <!-- Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context-support</artifactId>
             <version>${org.springframework-version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework</groupId>
@@ -108,7 +100,6 @@
             <version>${org.springframework-version}</version>
             <scope>test</scope>
         </dependency>
-
 
         <!-- 百度开源 校验参数模块 -->
         <dependency>
