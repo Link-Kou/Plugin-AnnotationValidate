@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * 校验注解
  * @author lk
  */
-@Target({ElementType.PARAMETER})
+@Target({ElementType.PARAMETER,ElementType.METHOD})
 @Retention(RetentionPolicy.SOURCE)
 public @interface Validated {
 }
