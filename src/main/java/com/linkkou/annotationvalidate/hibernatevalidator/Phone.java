@@ -31,7 +31,7 @@ public @interface Phone {
 	 */
 	String type() default "CN";
 
-	String message() default "{手机号码不正确}";
+	String message() default "{com.linkkou.annotationvalidate.phone.message}";
 
 	Class<?>[] groups() default { };
 

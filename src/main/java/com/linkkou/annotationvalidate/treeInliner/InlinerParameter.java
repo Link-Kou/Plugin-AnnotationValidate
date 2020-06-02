@@ -18,6 +18,7 @@ import javax.lang.model.element.TypeElement;
 import java.util.*;
 
 /**
+ * 当 {@link Validated} 用于方法参数上面的时候，参数必须配合相关的
  * @author lk
  * @version 1.0
  * @date 2020/4/11 22:25
@@ -198,7 +199,7 @@ public class InlinerParameter {
                 }
             }
             /*
-             * if (!ret.isSuccess()) { System.out.print("123ßß"); }
+             * if (!ret.isSuccess()) { System.out.print(""); }
              */
             JCTree.JCIf anIf = make.If(make.Parens(make.Unary(JCTree.Tag.NOT, make.Apply(
                     com.sun.tools.javac.util.List.nil(),

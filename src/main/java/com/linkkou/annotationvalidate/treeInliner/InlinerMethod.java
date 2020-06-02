@@ -1,6 +1,5 @@
 package com.linkkou.annotationvalidate.treeInliner;
 
-import com.baidu.unbiz.fluentvalidator.ComplexResult;
 import com.linkkou.annotationvalidate.Validated;
 import com.linkkou.annotationvalidate.utils.FluentValidatorCode;
 import com.linkkou.annotationvalidate.utils.JCHelp;
@@ -19,10 +18,10 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
+ * 当 {@link Validated} 用于方法上面的时候
+ *
  * @author lk
  * @version 1.0
  * @date 2020/4/11 22:25
@@ -111,32 +110,6 @@ public class InlinerMethod {
         return targetClassMap;
     }
 
-    /**
-     * 文本构建FieldAccess对象
-     */
-    private JCTree.JCFieldAccess buildJCFieldAccess(String path) {
-        final String com = path;
-        final String[] split = com.split("\\.");
-        List<Name> nameList = new ArrayList<>();
-        for (String key : split) {
-            nameList.add(names.fromString(key));
-        }
-        //遍历的对象路径必须大于1
-        final int size = nameList.size();
-        if (size >= 2) {
-            List<JCTree.JCFieldAccess> jcIdentList = new ArrayList<>();
-            for (int i = 0; i < size; i++) {
-                if (i == 0) {
-                    jcIdentList.add(make.Select(make.Ident(nameList.get(i)), nameList.get(i + 1)));
-                } else if (i >= 2) {
-                    jcIdentList.add(make.Select(jcIdentList.get(i - 2), nameList.get(i)));
-                }
-            }
-            return jcIdentList.get(jcIdentList.size() - 1);
-        }
-        return null;
-    }
-
     private class Inliner extends TreeTranslator {
 
         final List<Element> annoationElement;
@@ -148,33 +121,45 @@ public class InlinerMethod {
         @Override
         public void visitClassDef(JCTree.JCClassDecl jcClassDecl) {
             BuildCode buildCode = new BuildCode(jcClassDecl);
-            buildCode.CodeStructure();
-
+            //无构造，创建构造
+            buildCode.codeStructure();
             final com.sun.tools.javac.util.List<Object> of = com.sun.tools.javac.util.List.nil();
             for (JCTree tree : jcClassDecl.defs) {
                 if (tree instanceof JCTree.JCMethodDecl) {
                     final JCTree.JCMethodDecl jcMethodDecl = (JCTree.JCMethodDecl) tree;
                     for (Element element : annoationElement) {
                         if (element.equals(jcMethodDecl.sym)) {
-                            JCTree.JCVariableDecl jcVariableDecl2 = buildCode.CodeNewThis(jcMethodDecl);
+                            final String id = UUID.randomUUID().toString();
+                            //创建注解
+                            final JCTree.JCAnnotation annotation = make.Annotation(
+                                    jcHelp.selectFieldAccess("com.linkkou.annotationvalidate.ValidatedName"),
+                                    com.sun.tools.javac.util.List.of(
+                                            make.Assign(make.Ident(names.fromString("value")), make.Literal(id))
+                                    )
+                            );
+                            final JCTree.JCModifiers modifiers = jcMethodDecl.getModifiers();
+                            modifiers.annotations = modifiers.annotations.append(annotation);
+                            //JCTree.JCVariableDecl jcVariableDecl2 = buildCode.codeNewThis(jcMethodDecl);
                             //获取所有参数
                             List<JCTree.JCExpression> accesses = new ArrayList<>();
+                            //变量名称
                             List<String> fieldName = new ArrayList<>();
+                            //方法名称
                             accesses.add(make.Literal(jcMethodDecl.getName().toString()));
+                            accesses.add(make.Literal(id));
                             for (JCTree.JCVariableDecl param : jcMethodDecl.params) {
                                 fieldName.add(param.name.toString());
-                                final Name name = ((JCTree.JCIdent) param.vartype).name;
-                                accesses.add(buildJCFieldAccess(name.toString() + ".class"));
+                                //accesses.add(jcHelp.selectFieldAccess(name.toString() + ".class"));
                             }
                             List<JCTree.JCStatement> jcStatements = new ArrayList<>();
-                            jcStatements.add(make.Block(0, com.sun.tools.javac.util.List.of(jcVariableDecl2, buildCode.CodeComplexResult(fieldName, accesses))));
+                            jcStatements.add(make.Block(0, com.sun.tools.javac.util.List.of(buildCode.codeComplexResult(jcMethodDecl, fieldName, accesses))));
                             if (jcMethodDecl.body != null) {
                                 for (JCTree.JCStatement jcStatement : jcMethodDecl.body.stats) {
                                     jcStatements.add(jcStatement);
                                 }
                                 JCTree.JCBlock bodyBlock = make.Block(0, com.sun.tools.javac.util.List.from(jcStatements));
                                 JCTree.JCMethodDecl methodDecl = make.MethodDef(
-                                        jcMethodDecl.getModifiers(),
+                                        modifiers,
                                         jcMethodDecl.name,
                                         //names.fromString("vvve"),
                                         jcMethodDecl.restype,
@@ -208,15 +193,18 @@ public class InlinerMethod {
          * 查询Class是否存在无参数构造
          * 没有就创建无参数构造方法
          */
-        public void CodeStructure() {
+        @Deprecated
+        public void codeStructure() {
             boolean checkInit = false;
             for (JCTree tree : jcClassDecl.defs) {
                 if (tree.getKind().equals(Tree.Kind.METHOD)) {
                     final JCTree.JCMethodDecl tree1 = (JCTree.JCMethodDecl) tree;
                     if (tree1.getName().toString().equals("<init>")) {
-                        if (null == tree1.restype && tree1.params.size() == 0) {
+                        /*if (null == tree1.restype && tree1.params.size() == 0) {
                             checkInit = true;
-                        }
+                        }*/
+                        checkInit = true;
+                        break;
                     }
                 }
             }
@@ -238,13 +226,30 @@ public class InlinerMethod {
         /**
          * 对方法所在类进行初始化
          */
-        public JCTree.JCVariableDecl CodeNewThis(JCTree.JCMethodDecl jcMethodDecl) {
+        public JCTree.JCNewClass codeNewThis(JCTree.JCMethodDecl jcMethodDecl) {
+            com.sun.tools.javac.util.List<?> nil = com.sun.tools.javac.util.List.nil();
+            //获取到构造参数
+            for (JCTree tree : jcClassDecl.defs) {
+                if (tree.getKind().equals(Tree.Kind.METHOD)) {
+                    final JCTree.JCMethodDecl tree1 = (JCTree.JCMethodDecl) tree;
+                    if (tree1.getName().toString().equals("<init>")) {
+                        if (null == tree1.restype && tree1.params.size() == 0) {
+                            nil = com.sun.tools.javac.util.List.nil();
+                            break;
+                        } else {
+                            nil = com.sun.tools.javac.util.List.from(tree1.params.stream().map(x -> make.Literal(TypeTag.BOT, null)).toArray());
+                            break;
+                        }
+                    }
+                }
+            }
+
             final JCTree.JCNewClass jcNewClass = make.NewClass(null,
                     null,
                     //类名称 会自己导入包
                     make.Ident(names.fromString(jcMethodDecl.sym.owner.name.toString())),
                     //参数
-                    com.sun.tools.javac.util.List.nil(),
+                    (com.sun.tools.javac.util.List<JCTree.JCExpression>) nil,
                     //com.sun.tools.javac.util.List.of(make.Literal(TypeTag.BOT, null), make.Literal(TypeTag.BOT, null)),
                     null);
 
@@ -255,16 +260,17 @@ public class InlinerMethod {
                     make.Ident(names.fromString(jcMethodDecl.sym.owner.name.toString())),
                     jcNewClass
             );
-            return jcVariableDecl2;
+            return jcNewClass;
         }
 
         /**
          * 构建校验代码
          *
-         * @param fieldName 参数
+         * @param fieldName 参数 变量
+         * @param accesses  参数 变量
          * @return
          */
-        public JCTree.JCBlock CodeComplexResult(List<String> fieldName, List<JCTree.JCExpression> accesses) {
+        public JCTree.JCBlock codeComplexResult(JCTree.JCMethodDecl jcMethodDecl, List<String> fieldName, List<JCTree.JCExpression> accesses) {
 
             /*
              * 构建代码  new HibernateValidator<String>()
@@ -279,7 +285,7 @@ public class InlinerMethod {
                     com.sun.tools.javac.util.List.nil(),
                     null);
 
-
+            //获取到所有变量名称
             List<JCTree.JCIdent> jcLiterals = new ArrayList<>();
             for (String s : fieldName) {
                 jcLiterals.add(make.Ident(names.fromString(s)));
@@ -290,6 +296,12 @@ public class InlinerMethod {
                     com.sun.tools.javac.util.List.from(jcLiterals)
             );
             accesses.add(0, newObjs);
+
+            final JCTree.JCFieldAccess jcFieldAccess = jcHelp.selectFieldAccess(jcMethodDecl.sym.owner.name.toString() + ".class");
+
+            accesses.add(1, jcFieldAccess);
+
+            //当前类的的class对象
             /*
              * 构建代码 new HibernateValidator<String>().validator()
              */
@@ -304,7 +316,11 @@ public class InlinerMethod {
                     )
             );
 
+
             JCTree.JCMethodInvocation applyitem = fluentValidatorCode.getFluentValidator();
+
+            //初始化New
+            final JCTree.JCNewClass jcNewClass = codeNewThis(jcMethodDecl);
 
             /**
              * fluentValidator.on().on()
@@ -314,7 +330,7 @@ public class InlinerMethod {
                     make.Select(applyitem, names.fromString("on")),
                     com.sun.tools.javac.util.List.of(
                             //make.Literal(entry.getKey().toString()),
-                            make.Ident(names.fromString("jcVariableDecl2")),
+                            jcNewClass,
                             validator2
                     )
             );
@@ -354,10 +370,10 @@ public class InlinerMethod {
          * @param jcMethodDecl
          */
         @Deprecated
-        public void CodegetMethod(JCTree.JCMethodDecl jcMethodDecl) {
+        public void codegetMethod(JCTree.JCMethodDecl jcMethodDecl) {
 
             final JCTree.JCMethodInvocation apply = make.Apply(com.sun.tools.javac.util.List.nil(),
-                    buildJCFieldAccess("jcVariableDecl2.getClass"),
+                    jcHelp.selectFieldAccess("jcVariableDecl2.getClass"),
                     com.sun.tools.javac.util.List.nil());
 
             //获取所有参数
@@ -367,7 +383,7 @@ public class InlinerMethod {
             for (JCTree.JCVariableDecl param : jcMethodDecl.params) {
                 fieldName.add(param.name.toString());
                 final Name name = ((JCTree.JCIdent) param.vartype).name;
-                accesses.add(buildJCFieldAccess(name.toString() + ".class"));
+                accesses.add(jcHelp.selectFieldAccess(name.toString() + ".class"));
             }
 
             final JCTree.JCMethodInvocation getMethod = make.Apply(com.sun.tools.javac.util.List.nil(),
@@ -378,14 +394,14 @@ public class InlinerMethod {
             JCTree.JCVariableDecl jcVariableDecl3 = make.VarDef(
                     make.Modifiers(0),
                     names.fromString("methods"),
-                    buildJCFieldAccess("java.lang.reflect.Method"),//类型
+                    jcHelp.selectFieldAccess("java.lang.reflect.Method"),//类型
                     getMethod
             );
 
 
             final JCTree.JCVariableDecl jcVariableDecl = make.VarDef(make.Modifiers(Flags.ReceiverParamFlags), names.fromString("e"), make.Ident(names.fromString("Exception")), null);
             final JCTree.JCMethodInvocation apply1 = make.Apply(com.sun.tools.javac.util.List.nil(),
-                    buildJCFieldAccess("e.printStackTrace"),
+                    jcHelp.selectFieldAccess("e.printStackTrace"),
                     com.sun.tools.javac.util.List.nil());
             final JCTree.JCBlock block = make.Block(0, com.sun.tools.javac.util.List.of(make.Exec(apply1)));
             final JCTree.JCCatch aCatch = make.Catch(jcVariableDecl, block);

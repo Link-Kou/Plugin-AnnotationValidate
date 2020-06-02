@@ -1,10 +1,8 @@
 package com.linkkou.annotationvalidate.fluentValidator;
 
 import com.baidu.unbiz.fluentvalidator.jsr303.HibernateSupportedValidator;
-import com.linkkou.annotationvalidate.fluentValidator.HibernateSupportedValidateParameters;
 
 import javax.validation.Validation;
-import java.lang.reflect.Method;
 
 /**
  * 减化百度校验框架Hibernate初始化繁琐
@@ -17,7 +15,12 @@ public class HibernateValidator<T> {
         return new HibernateSupportedValidator<T>().setHiberanteValidator(Validation.buildDefaultValidatorFactory().getValidator());
     }
 
-    public HibernateSupportedValidateParameters<T> ValidateParameters(Object[] var3, String method, Class<?>... parameterTypes) {
-        return new HibernateSupportedValidateParameters<T>(var3, method, parameterTypes).setHiberanteValidator(Validation.buildDefaultValidatorFactory().getValidator());
+    /**
+     * @param var3   方法变量名称
+     * @param method 方法名称
+     * @return
+     */
+    public HibernateSupportedValidateParameters<T> ValidateParameters(Object[] var3, Class<?> c, String method, String id) {
+        return new HibernateSupportedValidateParameters<T>(var3, c, method, id).setHiberanteValidator(Validation.buildDefaultValidatorFactory().getValidator());
     }
 }

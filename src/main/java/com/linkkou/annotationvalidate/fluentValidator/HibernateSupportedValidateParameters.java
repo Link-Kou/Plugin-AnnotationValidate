@@ -9,6 +9,7 @@ import com.baidu.unbiz.fluentvalidator.jsr303.DefaultConstraintViolationTransfor
 import com.baidu.unbiz.fluentvalidator.support.GroupingHolder;
 import com.baidu.unbiz.fluentvalidator.util.ArrayUtil;
 import com.baidu.unbiz.fluentvalidator.util.CollectionUtil;
+import com.linkkou.annotationvalidate.ValidatedName;
 
 import javax.validation.ConstraintViolation;
 import java.lang.reflect.Method;
@@ -27,19 +28,26 @@ public class HibernateSupportedValidateParameters<T> extends ValidatorHandler<T>
 
     private int hibernateDefaultErrorCode;
 
-    private ConstraintViolationTransformer constraintViolationTransformer = new DefaultConstraintViolationTransformer();
+    private final ConstraintViolationTransformer constraintViolationTransformer = new DefaultConstraintViolationTransformer();
 
-    private String method;
+    private final String method;
 
-    private Object[] var3;
+    private final Object[] var3;
 
-    private Class[] parameterTypes;
+    private final String id;
 
+    private final Class<?> c;
 
-    public HibernateSupportedValidateParameters(Object[] var3, String method, Class<?>... parameterTypes) {
+    /**
+     * @param var3   参数
+     * @param method 方法名称
+     * @param id     id
+     */
+    public HibernateSupportedValidateParameters(Object[] var3, Class<?> c, String method, String id) {
         this.var3 = var3;
+        this.c = c;
         this.method = method;
-        this.parameterTypes = parameterTypes;
+        this.id = id;
     }
 
     @Override
@@ -50,9 +58,21 @@ public class HibernateSupportedValidateParameters<T> extends ValidatorHandler<T>
     @Override
     public boolean validate(ValidatorContext context, T t) {
         try {
-            final Method method = t.getClass().getMethod(this.method, parameterTypes);
+            final Method[] methods = c.getMethods();
+            Method method = null;
+            for (Method value : methods) {
+                if (this.method.equals(value.getName())) {
+                    final ValidatedName annotation = value.getAnnotation(ValidatedName.class);
+                    if (this.id.equals(annotation.value())) {
+                        method = value;
+                    }
+                }
+            }
+            if (null == method) {
+                return false;
+            }
             Class<?>[] groups = GroupingHolder.getGrouping();
-            Set<ConstraintViolation<T>> constraintViolations;
+            Set<ConstraintViolation<Object>> constraintViolations;
             if (ArrayUtil.isEmpty(groups)) {
                 constraintViolations = HIBERANTE_VALIDATOR.forExecutables().validateParameters(t, method, var3);
             } else {
@@ -61,7 +81,7 @@ public class HibernateSupportedValidateParameters<T> extends ValidatorHandler<T>
             if (CollectionUtil.isEmpty(constraintViolations)) {
                 return true;
             } else {
-                for (ConstraintViolation<T> constraintViolation : constraintViolations) {
+                for (ConstraintViolation<Object> constraintViolation : constraintViolations) {
                     context.addError(constraintViolationTransformer.toValidationError(constraintViolation)
                             .setErrorCode(hibernateDefaultErrorCode));
                 }
