@@ -13,7 +13,7 @@
     
 ### Maven仓库
     
-```xml：
+```xml
 
 <dependency>
   <groupId>com.github.link-kou</groupId>
@@ -26,8 +26,24 @@
 
 ### 示列
 
-```xml:
+```java
+
+     /**
+      * 用于方法上面。校验输入参数是否合理
+      */
+     @Validated
+     @Override
+     public Boolean roleMeunsList(@NotBlank String id) {
+         
+     }   
+
+    /**
+      * 用于方法字段上面。校验输入参数是否合理
+      */
+     @Override
+     public Boolean roleMeunsList(@Validated User user) {
+         
+     }  
 
 ```
 
-### 使用方法待续
