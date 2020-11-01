@@ -17,6 +17,7 @@ import java.util.Set;
 
 
 /**
+ * 校验方案
  * @author lk
  * @version 1.0
  * @date 2020/4/12 14:59
@@ -58,6 +59,7 @@ public class HibernateSupportedValidateParameters<T> extends ValidatorHandler<T>
     @Override
     public boolean validate(ValidatorContext context, T t) {
         try {
+            //查询出id相同的方法
             final Method[] methods = c.getMethods();
             Method method = null;
             for (Method value : methods) {
@@ -71,6 +73,7 @@ public class HibernateSupportedValidateParameters<T> extends ValidatorHandler<T>
             if (null == method) {
                 return false;
             }
+            //构建Hibernate校验
             Class<?>[] groups = GroupingHolder.getGrouping();
             Set<ConstraintViolation<Object>> constraintViolations;
             if (ArrayUtil.isEmpty(groups)) {

@@ -75,7 +75,6 @@ public class InlinerMethod {
             if (e.getKind() != ElementKind.METHOD) {
                 continue;
             }
-
             //region class
             final Symbol enclosingElement = ((Symbol.MethodSymbol) e).owner;
             final String namepath = enclosingElement.toString();
@@ -90,7 +89,7 @@ public class InlinerMethod {
     }
 
     /**
-     * 查询所有带有{@link Validated ConfigValue注解的}
+     * 查询所有带有{@link Validated 注解的}
      *
      * @param roundEnvironment
      * @return
@@ -101,7 +100,7 @@ public class InlinerMethod {
         Collection<? extends Element> anLogSet = roundEnvironment.getElementsAnnotatedWith(Validated.class);
         //遍历所有元素
         for (Element e : anLogSet) {
-            //方法参数上
+            //方法上
             if (e.getKind() != ElementKind.METHOD) {
                 continue;
             }

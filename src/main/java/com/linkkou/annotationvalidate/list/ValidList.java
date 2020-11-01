@@ -4,6 +4,7 @@ import javax.validation.Valid;
 import java.util.*;
 
 /**
+ * 校验List
  * @author lk
  * @version 1.0
  * @date 2020/4/10 14:40

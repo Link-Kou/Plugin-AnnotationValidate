@@ -6,6 +6,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * 编译后,ValidatedName注解将替换{@link com.linkkou.annotationvalidate.Validated}作用到方法上面。
+ * 方便查询相关方法.解决方法重载等问题产生
+ *
  * @author lk
  * @version 1.0
  * @date 2020/4/30 09:16

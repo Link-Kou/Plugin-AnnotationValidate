@@ -19,6 +19,7 @@ import java.util.*;
 
 /**
  * 当 {@link Validated} 用于方法参数上面的时候，参数必须配合相关的
+ *
  * @author lk
  * @version 1.0
  * @date 2020/4/11 22:25
@@ -30,7 +31,6 @@ public class InlinerParameter {
     private Name.Table names;
     private Context context;
     private RoundEnvironment roundEnv;
-
     private JCHelp jcHelp;
     private FluentValidatorCode fluentValidatorCode;
 
@@ -46,7 +46,7 @@ public class InlinerParameter {
 
     public void process() {
         List<TypeElement> annoationElement = findAnnoationElement(roundEnv);
-        //遍历所有元素
+        //遍历所有元素,修改代码
         for (TypeElement item : annoationElement) {
             JCTree tree = (JCTree) trees.getTree(item);
             TreeTranslator visitor = new Inliner();
@@ -62,20 +62,21 @@ public class InlinerParameter {
      */
     private List<TypeElement> findAnnoationElement(RoundEnvironment roundEnvironment) {
         List<TypeElement> targetClassMap = new ArrayList<>();
-        //找到所有跟AnDataCollect注解相关元素
+        //找到所有跟Validated注解相关元素
         Collection<? extends Element> anLogSet = roundEnvironment.getElementsAnnotatedWith(Validated.class);
         HashSet<String> hstrings = new HashSet<>();
         //遍历所有元素
         for (Element e : anLogSet) {
-            //方法参数上
+            //必须要求在方法参数上
             if (e.getKind() != ElementKind.PARAMETER) {
                 continue;
             }
             Element owner = (Element) ((Symbol.VarSymbol) e).owner;
             String methodname = owner.getSimpleName().toString();
+            //去重
             if (!hstrings.contains(methodname)) {
                 hstrings.add(methodname);
-                //此处找到的是类的描述类型，因为我们的AnDataCollect的注解描述是method的所以closingElement元素是类
+                //此处找到的是类的描述类型
                 TypeElement enclosingElement = (TypeElement) owner.getEnclosingElement();
                 //对类做一个缓存
                 targetClassMap.add(enclosingElement);
@@ -84,47 +85,54 @@ public class InlinerParameter {
         return targetClassMap;
     }
 
+    /**
+     * 修改代码
+     */
     private class Inliner extends TreeTranslator {
 
+        /**
+         * 修改方法
+         *
+         * @param jcMethodDecl 对象
+         */
         @Override
         public void visitMethodDef(JCTree.JCMethodDecl jcMethodDecl) {
             super.visitMethodDef(jcMethodDecl);
-
             //过滤特点的方法
             if (jcMethodDecl.getName().toString().equals("<init>")) {
                 return;
             }
 
+            //region 查询方法上面所有参数。将带有Validated注解过滤出来
             HashMap<Name, JCTree.JCExpression> hashMap = new LinkedHashMap<>();
+            //参数上面的注解
             List<JCTree.JCAnnotation> jcAnnotations = new ArrayList<>();
+            //所有参数
             List<JCTree.JCVariableDecl> jcVariableDecls = new ArrayList<>();
             for (JCTree.JCVariableDecl jcVariableDecl : jcMethodDecl.getParameters()) {
+                //遍历所有注解
                 for (JCTree.JCAnnotation jcAnnotation : jcVariableDecl.mods.annotations) {
                     if (jcAnnotation.attribute.type.toString().equals(Validated.class.getName())) {
                         hashMap.put(jcVariableDecl.name, jcVariableDecl.vartype);
                     } else {
                         jcAnnotations.add(jcAnnotation);
-
                     }
                 }
-                //去除@Validated，防止重复的扫描
+                //去除@Validated，防止重复的扫描,塞回其他的注解
                 jcVariableDecl.mods.annotations = com.sun.tools.javac.util.List.from(jcAnnotations);
                 jcVariableDecls.add(jcVariableDecl);
             }
-
             if (hashMap.size() < 1) {
                 return;
             }
-
+            //endregion
 
             //region 构建代码 fluentValidator.on("", new HibernateValidator<String>().annotationvalidate()).on().on()
             JCTree.JCMethodInvocation applyitem = fluentValidatorCode.getFluentValidator();
-
             for (Map.Entry<Name, JCTree.JCExpression> entry : hashMap.entrySet()) {
                 /*
                  * 构建代码  new HibernateValidator<String>()
                  */
-
                 JCTree.JCExpression loggerNewClass = make.NewClass(null,
                         null,
                         //类名称 会自己导入包
@@ -134,7 +142,6 @@ public class InlinerParameter {
                         //参数
                         com.sun.tools.javac.util.List.nil(),
                         null);
-
                 /*
                  * 构建代码 new HibernateValidator<String>().validator()
                  */
@@ -143,7 +150,6 @@ public class InlinerParameter {
                         make.Select(loggerNewClass, names.fromString("validator")),
                         com.sun.tools.javac.util.List.nil()
                 );
-
                 /**
                  * fluentValidator.on().on()
                  */
@@ -161,9 +167,6 @@ public class InlinerParameter {
             //endregion
 
             //region 构建代码 ComplexResult complexresultapt = fluentValidator.on("", new HibernateValidator<String>().annotationvalidate()).on().on().doValidate().result(toComplex());
-            /*
-             *
-             */
             // ComplexResult complexresultapt =
             JCTree.JCVariableDecl jcVariableDecl2 = make.VarDef(
                     make.Modifiers(0),
@@ -173,7 +176,7 @@ public class InlinerParameter {
             );
             //endregion
 
-
+            //构建错误
             JCTree.JCStatement block = make.Throw(make.NewClass(null,
                     null,
                     //类名称 会自己导入包
@@ -198,21 +201,14 @@ public class InlinerParameter {
                     }
                 }
             }
-            /*
-             * if (!ret.isSuccess()) { System.out.print(""); }
-             */
+            //if (!ret.isSuccess()) {  }
             JCTree.JCIf anIf = make.If(make.Parens(make.Unary(JCTree.Tag.NOT, make.Apply(
                     com.sun.tools.javac.util.List.nil(),
                     make.Select(make.Ident(names.fromString("complexresultapt")), names.fromString("isSuccess")),
                     com.sun.tools.javac.util.List.nil()
             ))), block, null);
 
-
-            //执行代码纯文本构建完毕后需要执行 make.Exec(apply2);
-
-            /**
-             * 复制方法内其他的代码，插入新的代码，重新构建方法
-             */
+            //复制方法内其他的代码，插入新的代码，重新构建方法
             List<JCTree.JCStatement> jcStatements = new ArrayList<>();
             jcStatements.add(jcVariableDecl2);
             jcStatements.add(anIf);
