@@ -3,7 +3,7 @@
 
 #### Plugin-AnnotationValidate 能做什么？
 
-AnnotationValidate基于Hibernate-Validator实现基于注解简化相关的代码校验
+AnnotationValidate基于Hibernate-Validator实现基于注解简化相关的代码校验。<b> 无环境约束,可以在Spring以及其他场景中使用 </b>
 
 + 一个注解完成方法参数上校验
 + 一个注解完成方法独立或特点参数校验
