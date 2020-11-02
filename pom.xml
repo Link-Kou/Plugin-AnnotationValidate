@@ -8,7 +8,7 @@
     <artifactId>annotation-validate</artifactId>
 
     <packaging>jar</packaging>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
     <name>Plugin-AnnotationValidate-${project.version}</name>
     <url>https://github.com/Link-Kou/Plugin-AnnotationValidate</url>
     <description>AnnotationValidatePlugin</description>
