@@ -1,6 +1,7 @@
 package com.linkkou.annotationvalidate.treeInliner;
 
 import com.linkkou.annotationvalidate.Validated;
+import com.linkkou.annotationvalidate.utils.FluentException;
 import com.linkkou.annotationvalidate.utils.FluentValidatorCode;
 import com.linkkou.annotationvalidate.utils.JCHelp;
 import com.sun.source.util.Trees;
@@ -33,6 +34,7 @@ public class InlinerParameter {
     private RoundEnvironment roundEnv;
     private JCHelp jcHelp;
     private FluentValidatorCode fluentValidatorCode;
+    private FluentException fluentException;
 
     public InlinerParameter(Trees trees, TreeMaker make, Name.Table names, Context context, RoundEnvironment roundEnv) {
         this.trees = trees;
@@ -42,6 +44,7 @@ public class InlinerParameter {
         this.roundEnv = roundEnv;
         this.jcHelp = new JCHelp(make, names);
         this.fluentValidatorCode = new FluentValidatorCode(make, names);
+        this.fluentException = new FluentException(make, names);
     }
 
     public void process() {
@@ -57,8 +60,8 @@ public class InlinerParameter {
     /**
      * 查询所有带有{@link Validated ConfigValue注解的}
      *
-     * @param roundEnvironment
-     * @return
+     * @param roundEnvironment 对象
+     * @return List<TypeElement>
      */
     private List<TypeElement> findAnnoationElement(RoundEnvironment roundEnvironment) {
         List<TypeElement> targetClassMap = new ArrayList<>();
@@ -130,24 +133,19 @@ public class InlinerParameter {
             //region 构建代码 fluentValidator.on("", new HibernateValidator<String>().annotationvalidate()).on().on()
             JCTree.JCMethodInvocation applyitem = fluentValidatorCode.getFluentValidator();
             for (Map.Entry<Name, JCTree.JCExpression> entry : hashMap.entrySet()) {
+                //是否是基本类型
+                //entry.getValue().type.isPrimitive();
+                //基本类型以及包装类型是不会参与验证,编译是通过的
                 /*
                  * 构建代码  new HibernateValidator<String>()
                  */
-                JCTree.JCExpression loggerNewClass = make.NewClass(null,
-                        null,
-                        //类名称 会自己导入包
-                        make.TypeApply(
-                                jcHelp.selectFieldAccess("com.linkkou.annotationvalidate.fluentValidator.HibernateValidator"),
-                                com.sun.tools.javac.util.List.of(entry.getValue())),
-                        //参数
-                        com.sun.tools.javac.util.List.nil(),
-                        null);
+                final JCTree.JCExpression hibernateValidator = fluentValidatorCode.getHibernateValidator();
                 /*
                  * 构建代码 new HibernateValidator<String>().validator()
                  */
                 JCTree.JCMethodInvocation validator2 = make.Apply(
                         com.sun.tools.javac.util.List.nil(),
-                        make.Select(loggerNewClass, names.fromString("validator")),
+                        make.Select(hibernateValidator, names.fromString("validator")),
                         com.sun.tools.javac.util.List.nil()
                 );
                 /**
@@ -157,7 +155,6 @@ public class InlinerParameter {
                         com.sun.tools.javac.util.List.nil(),
                         make.Select(applyitem, names.fromString("on")),
                         com.sun.tools.javac.util.List.of(
-                                //make.Literal(entry.getKey().toString()),
                                 make.Ident(entry.getKey()),
                                 validator2
                         )
@@ -177,47 +174,19 @@ public class InlinerParameter {
             //endregion
 
             //构建错误
-            JCTree.JCStatement block = make.Throw(make.NewClass(null,
-                    null,
-                    //类名称 会自己导入包
-                    make.Select(make.Select(make.Ident(names.fromString("javax")), names.fromString("validation")), names.fromString("ValidationException"))
-                    ,
-                    //参数
-                    com.sun.tools.javac.util.List.of(make.Literal("Validation Is Error")),
-                    null)
-            );
-            //系统类型
-            if (!(jcMethodDecl.restype instanceof JCTree.JCPrimitiveTypeTree)) {
-                if (jcMethodDecl.restype instanceof JCTree.JCIdent) {
-                    if (!jcMethodDecl.restype.type.toString().startsWith("java.lang")) {
-                        //根据返回对象构建 new 方法返回类型(rex)
-                        block = make.Block(0, com.sun.tools.javac.util.List.of(make.Return(make.NewClass(null,
-                                null,
-                                //类名称 会自己导入包
-                                jcMethodDecl.restype,
-                                //参数
-                                com.sun.tools.javac.util.List.of(make.Ident(names.fromString("complexresultapt"))),
-                                null))));
-                    }
-                }
-            }
-            //if (!ret.isSuccess()) {  }
-            JCTree.JCIf anIf = make.If(make.Parens(make.Unary(JCTree.Tag.NOT, make.Apply(
-                    com.sun.tools.javac.util.List.nil(),
-                    make.Select(make.Ident(names.fromString("complexresultapt")), names.fromString("isSuccess")),
-                    com.sun.tools.javac.util.List.nil()
-            ))), block, null);
+            final JCTree.JCStatement exception = fluentException.getException();
+            final JCTree.JCIf isSuccess = fluentValidatorCode.getIsSuccess(exception);
+
 
             //复制方法内其他的代码，插入新的代码，重新构建方法
             List<JCTree.JCStatement> jcStatements = new ArrayList<>();
             jcStatements.add(jcVariableDecl2);
-            jcStatements.add(anIf);
+            jcStatements.add(isSuccess);
             //用于接口的时候代码为空
             if (jcMethodDecl.body != null) {
                 for (JCTree.JCStatement jcStatement : jcMethodDecl.body.stats) {
                     jcStatements.add(jcStatement);
                 }
-
                 JCTree.JCBlock bodyBlock = make.Block(0, com.sun.tools.javac.util.List.from(jcStatements));
                 JCTree.JCMethodDecl methodDecl = make.MethodDef(
                         jcMethodDecl.getModifiers(),

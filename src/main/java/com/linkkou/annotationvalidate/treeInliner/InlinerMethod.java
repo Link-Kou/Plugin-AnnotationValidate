@@ -1,6 +1,7 @@
 package com.linkkou.annotationvalidate.treeInliner;
 
 import com.linkkou.annotationvalidate.Validated;
+import com.linkkou.annotationvalidate.utils.FluentException;
 import com.linkkou.annotationvalidate.utils.FluentValidatorCode;
 import com.linkkou.annotationvalidate.utils.JCHelp;
 import com.sun.source.tree.Tree;
@@ -36,6 +37,7 @@ public class InlinerMethod {
 
     private JCHelp jcHelp;
     private FluentValidatorCode fluentValidatorCode;
+    private FluentException fluentException;
 
     public InlinerMethod(Trees trees, TreeMaker make, Name.Table names, Context context, RoundEnvironment roundEnv) {
         this.trees = trees;
@@ -45,6 +47,7 @@ public class InlinerMethod {
         this.roundEnv = roundEnv;
         this.jcHelp = new JCHelp(make, names);
         this.fluentValidatorCode = new FluentValidatorCode(make, names);
+        this.fluentException = new FluentException(make, names);
     }
 
     public void process() {
@@ -180,6 +183,9 @@ public class InlinerMethod {
         }
     }
 
+    /**
+     * 构建代码
+     */
     private class BuildCode {
 
         private JCTree.JCClassDecl jcClassDecl;
@@ -270,20 +276,7 @@ public class InlinerMethod {
          * @return
          */
         public JCTree.JCBlock codeComplexResult(JCTree.JCMethodDecl jcMethodDecl, List<String> fieldName, List<JCTree.JCExpression> accesses) {
-
-            /*
-             * 构建代码  new HibernateValidator<String>()
-             */
-            JCTree.JCExpression loggerNewClass = make.NewClass(null,
-                    null,
-                    //类名称 会自己导入包
-                    make.TypeApply(
-                            jcHelp.selectFieldAccess("com.linkkou.annotationvalidate.fluentValidator.HibernateValidator"),
-                            com.sun.tools.javac.util.List.nil()),
-                    //参数
-                    com.sun.tools.javac.util.List.nil(),
-                    null);
-
+            final JCTree.JCExpression hibernateValidator = fluentValidatorCode.getHibernateValidator();
             //获取到所有变量名称
             List<JCTree.JCIdent> jcLiterals = new ArrayList<>();
             for (String s : fieldName) {
@@ -295,18 +288,15 @@ public class InlinerMethod {
                     com.sun.tools.javac.util.List.from(jcLiterals)
             );
             accesses.add(0, newObjs);
-
             final JCTree.JCFieldAccess jcFieldAccess = jcHelp.selectFieldAccess(jcMethodDecl.sym.owner.name.toString() + ".class");
-
             accesses.add(1, jcFieldAccess);
-
             //当前类的的class对象
             /*
              * 构建代码 new HibernateValidator<String>().validator()
              */
             JCTree.JCMethodInvocation validator2 = make.Apply(
                     com.sun.tools.javac.util.List.nil(),
-                    make.Select(loggerNewClass, names.fromString("ValidateParameters")),
+                    make.Select(hibernateValidator, names.fromString("ValidateParameters")),
                     com.sun.tools.javac.util.List.from(
                             //make.Literal(entry.getKey().toString()),
                             //make.Ident(names.fromString("methods")),
@@ -341,25 +331,10 @@ public class InlinerMethod {
                     fluentValidatorCode.getComplexResult(apply3)
             );
 
-            JCTree.JCStatement blockif = make.Throw(make.NewClass(null,
-                    null,
-                    //类名称 会自己导入包
-                    make.Select(make.Select(make.Ident(names.fromString("javax")), names.fromString("validation")), names.fromString("ValidationException"))
-                    ,
-                    //参数
-                    com.sun.tools.javac.util.List.of(make.Literal("Validation Is Error")),
-                    null)
-            );
-            /*
-             * if (!ret.isSuccess()) { System.out.print("123ßß"); }
-             */
-            JCTree.JCIf anIf = make.If(make.Parens(make.Unary(JCTree.Tag.NOT, make.Apply(
-                    com.sun.tools.javac.util.List.nil(),
-                    make.Select(make.Ident(names.fromString("complexresultapt")), names.fromString("isSuccess")),
-                    com.sun.tools.javac.util.List.nil()
-            ))), blockif, null);
-
-            return make.Block(0, com.sun.tools.javac.util.List.of(jcVariableDecl4, anIf));
+            //构建错误
+            final JCTree.JCStatement exception = fluentException.getException();
+            final JCTree.JCIf isSuccess = fluentValidatorCode.getIsSuccess(exception);
+            return make.Block(0, com.sun.tools.javac.util.List.of(jcVariableDecl4, isSuccess));
 
         }
 

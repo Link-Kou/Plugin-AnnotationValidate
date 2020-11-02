@@ -5,6 +5,8 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Name;
 
 /**
+ * 公共代码生成器
+ *
  * @author lk
  * @version 1.0
  * @date 2020/4/12 17:36
@@ -24,7 +26,7 @@ public class FluentValidatorCode {
     /**
      * 构建静态类 com.baidu.unbiz.fluentvalidator.FluentValidator.checkAll().failFast()
      *
-     * @return
+     * @return JCMethodInvocation
      */
     public JCTree.JCMethodInvocation getFluentValidator() {
         final JCTree.JCFieldAccess getCheckAllCall = jcHelp
@@ -49,7 +51,7 @@ public class FluentValidatorCode {
      * 构建 .doValidate().result(toComplex())
      *
      * @param applyitem new HibernateValidator<String>().annotationvalidate()).on().on()
-     * @return
+     * @return JCMethodInvocation
      */
     public JCTree.JCMethodInvocation getComplexResult(JCTree.JCMethodInvocation applyitem) {
         //.doValidate()
@@ -75,5 +77,37 @@ public class FluentValidatorCode {
         return apply5;
     }
 
+    /**
+     * 构建 com.linkkou.annotationvalidate.fluentValidator.HibernateValidator()
+     *
+     * @return JCExpression
+     */
+    public JCTree.JCExpression getHibernateValidator() {
+        JCTree.JCExpression newClass = make.NewClass(null,
+                null,
+                //类名称 会自己导入包
+                make.TypeApply(
+                        jcHelp.selectFieldAccess("com.linkkou.annotationvalidate.fluentValidator.HibernateValidator"),
+                        com.sun.tools.javac.util.List.nil()),
+                //参数
+                com.sun.tools.javac.util.List.nil(),
+                null);
+        return newClass;
+    }
+
+    /**
+     * if (!complexresultapt.isSuccess()) {
+     *
+     * @param statement
+     * @return
+     */
+    public JCTree.JCIf getIsSuccess(JCTree.JCStatement statement) {
+        JCTree.JCIf anIf = make.If(make.Parens(make.Unary(JCTree.Tag.NOT, make.Apply(
+                com.sun.tools.javac.util.List.nil(),
+                make.Select(make.Ident(names.fromString("complexresultapt")), names.fromString("isSuccess")),
+                com.sun.tools.javac.util.List.nil()
+        ))), statement, null);
+        return anIf;
+    }
 
 }
