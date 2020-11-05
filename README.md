@@ -37,7 +37,7 @@ AnnotationValidate基于Hibernate-Validator实现基于注解简化相关的代�
 ```
 
 
-### 示列代码
+### 示列代码-1,常规类方法
 
 ```java
 
@@ -72,6 +72,45 @@ public class Test {
 
 ```
 
+### 示列代码-2,基于接口开发
+
+```java
+
+import javax.validation.constraints.NotBlank;
+/**
+ * 基于接口开发必须在接口上实现注解,否者会有异常
+ * @author lk
+ * @version 1.0
+ * @date 2020/11/5 17:25
+ */
+public interface TestI {
+    public Boolean roleMeunsList(@NotBlank String id);
+}
+
+```
+
+```java
+
+import com.linkkou.annotationvalidate.Validated;
+import javax.validation.constraints.NotBlank;
+/**
+ * 测试
+ */
+public class Test implements TestI {
+
+    /**
+     * 用于方法上面。校验输入参数是否合理
+     */
+    @Validated
+    @Override
+    public Boolean roleMeunsList(@NotBlank String id) {
+        return true;
+    }
+
+}
+
+```
+
 # 原理
 
  JSR 269: Pluggable Annotation Processing API (https://www.jcp.org/en/jsr/detail?id=269) 。
@@ -82,4 +121,5 @@ public class Test {
 #注意事项
 
  + 编译不生效，先查看一下是否开启了注解编译。无论是IDEA、Eclipse都必须开启注解编译,关于如何开启自行搜索。
+ + 基于接口的实现类,接口上必须有校验注解。否者校验会异常。
  
