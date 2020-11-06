@@ -1,15 +1,11 @@
 package com.linkkou.annotationvalidate;
 
 
-import com.linkkou.annotationvalidate.treeInliner.InlinerMethod;
-import com.linkkou.annotationvalidate.treeInliner.InlinerParameter;
+import com.linkkou.annotationvalidate.inliner.InlinerMethod;
+import com.linkkou.annotationvalidate.inliner.InlinerParameter;
 import com.sun.source.util.Trees;
-import com.sun.tools.javac.code.Symbol;
-import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
-import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeMaker;
-import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;

@@ -1,4 +1,4 @@
-package com.linkkou.annotationvalidate.treeInliner;
+package com.linkkou.annotationvalidate.inliner;
 
 import com.linkkou.annotationvalidate.Validated;
 import com.linkkou.annotationvalidate.utils.FluentException;
@@ -22,7 +22,7 @@ import java.util.*;
 
 /**
  * 当 {@link Validated} 用于方法上面的时候
- *
+ * 下面的代码是繁琐的代码构建过程
  * @author lk
  * @version 1.0
  * @date 2020/4/11 22:25

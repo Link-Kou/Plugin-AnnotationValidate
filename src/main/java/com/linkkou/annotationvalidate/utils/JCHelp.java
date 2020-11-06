@@ -15,6 +15,7 @@ import java.util.List;
 public class JCHelp {
 
     private TreeMaker make;
+
     private Name.Table names;
 
     public JCHelp(TreeMaker make, Name.Table names) {
